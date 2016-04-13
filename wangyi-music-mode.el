@@ -104,27 +104,27 @@
 
 ;; Constant variables
 (defconst wangyi-music-channels-delimiter
-  (make-string 120 61)
+  (make-string 120 ?=)
   "Wangyi music channels delimiter.")
 
 (defconst wangyi-music-indent0
-  (make-string 1 32)
+  (make-string 1 ?\s)
   "Wangyi music 0-level indentation.")
 
 (defconst wangyi-music-indent1
-  (make-string 2 32)
+  (make-string 2 ?\s)
   "Wangyi music 1-level indentation.")
 
 (defconst wangyi-music-indent2
-  (make-string 4 32)
+  (make-string 4 ?\s)
   "Wangyi music 2-level indentation.")
 
 (defconst wangyi-music-indent3
-  (make-string 5 32)
+  (make-string 5 ?\s)
   "Wangyi music 3-level indentation.")
 
 (defconst wangyi-music-indent4
-  (make-string 10 32)
+  (make-string 10 ?\s)
   "Wangyi music 4-level indentation.")
 
 (defconst wangyi-music-buffer-name
