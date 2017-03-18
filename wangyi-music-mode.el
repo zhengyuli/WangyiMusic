@@ -1,4 +1,4 @@
-;;; wangyi-music-mode.el --- wangyi music mode
+;;; wangyi-music-mode.el --- wangyi music mode  -*- lexical-binding: t; -*-
 ;; Time-stamp: <2016-04-09 22:06:11 Saturday by zhengyuli>
 
 ;; Copyright (C) 2013 zhengyu li
