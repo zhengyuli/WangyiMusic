@@ -158,7 +158,7 @@
   " Return the value in ALIST that is associated with KEY."
   (cdr (assoc-string key alist)))
 
-(defun init-wangyi-music-mode-map ()
+(defun wangyi-music-init-mode-map ()
   "Init wangyi music mode key map."
   (setq wangyi-music-mode-map
         (let ((map (make-sparse-keymap)))
@@ -227,7 +227,7 @@
         (error "Unknown status")))))
 
 (defun wangyi-music-set-channel ()
-  "Change wangyi channel with CHANNEL-NUMBER."
+  "Change wangyi channel."
   (interactive)
   (let* ((channels (mapcar #'car wangyi-music-channels))
          (the-channel (completing-read "Choose a channel or input the channel number: " channels)))
@@ -593,7 +593,7 @@
     (setq wangyi-music-status "stopped")
     (if (not (file-exists-p wangyi-music-cache-directory))
         (mkdir wangyi-music-cache-directory t))
-    (init-wangyi-music-mode-map)
+    (wangyi-music-init-mode-map)
     (wangyi-music-get-channels)
     (setq wangyi-music-current-channel (car (elt wangyi-music-channels wangyi-music-default-channel)))
     (wangyi-music-get-song-list)
