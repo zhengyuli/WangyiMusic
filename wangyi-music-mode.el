@@ -229,8 +229,11 @@
 (defun wangyi-music-set-channel ()
   "Change wangyi channel with CHANNEL-NUMBER."
   (interactive)
-  (let* ((channels (mapcar #'car wangyi-music-channels)))
-    (setq wangyi-music-current-channel (completing-read "Choose a channel: " channels))
+  (let* ((channels (mapcar #'car wangyi-music-channels))
+         (the-channel (completing-read "Choose a channel or input the channel number: " channels)))
+    (if (member the-channel channels)
+        (setq wangyi-music-current-channel the-channel)
+      (setq wangyi-music-current-channel (car (elt wangyi-music-channels (string-to-number the-channel)))))
     (message "Change to channel: %s" wangyi-music-current-channel)
     (wangyi-music-refresh)))
 
