@@ -223,16 +223,13 @@
           (wangyi-music-pause/resume)
         (error "Unknown status")))))
 
-(defun wangyi-music-set-channel (channel-number)
+(defun wangyi-music-set-channel ()
   "Change wangyi channel with CHANNEL-NUMBER."
-  (interactive "nChannel number:")
-  (if (<= channel-number (length wangyi-music-channels))
-      (progn
-        (setq wangyi-music-current-channel channel-number)
-        (message (format "Change to channel: %s"
-                         (car (elt wangyi-music-channels channel-number))))
-        (wangyi-music-refresh))
-    (message "Warnning: not exist channel")))
+  (interactive)
+  (let* ((channels (mapcar #'car wangyi-music-channels)))
+    (setq wangyi-music-current-channel (completing-read "Choose a channel: " channels))
+    (message "Change to channel: %s" wangyi-music-current-channel)
+    (wangyi-music-refresh)))
 
 (defun wangyi-music-play-next-refresh ()
   "Play next song and refresh."
@@ -355,14 +352,14 @@
     (wangyi-music-parse-song-list
      (wangyi-music-send-url (concat wangyi-music-discover-toplist-url
                                     "?id="
-                                    (cdr (elt wangyi-music-channels wangyi-music-current-channel)))))))
+                                    (cdr (assoc-string wangyi-music-current-channel wangyi-music-channels)))))))
 
 (defun wangyi-music-get-song-list-async (callback)
   "Get song list from wangyi music server with CALLBACK."
   (let ()
     (wangyi-music-send-url (concat wangyi-music-discover-toplist-url
                                    "?id="
-                                   (cdr (elt wangyi-music-channels wangyi-music-current-channel)))
+                                   (cdr (assoc-string wangyi-music-current-channel wangyi-music-channels)))
                            nil
                            #'(lambda (status &rest args)
                                (wangyi-music-parse-song-list (current-buffer))
@@ -487,7 +484,7 @@
       (insert (concat (propertize "\n\nCurrent channel: "
                                   'face '(:foreground "Green3" :height 1.2))
                       (propertize (format "%s\n\n"
-                                          (car (elt wangyi-music-channels wangyi-music-current-channel)))
+                                          wangyi-music-current-channel)
                                   'face '(:foreground "Orange" :height 1.2))))
       (let (song
             title
@@ -588,11 +585,11 @@
     (wangyi-music-mode)
     ;; Init settings
     (setq wangyi-music-status "stopped")
-    (setq wangyi-music-current-channel wangyi-music-default-channel)
     (if (not (file-exists-p wangyi-music-cache-directory))
         (mkdir wangyi-music-cache-directory t))
     (init-wangyi-music-mode-map)
     (wangyi-music-get-channels)
+    (setq wangyi-music-current-channel (car (elt wangyi-music-channels wangyi-music-default-channel)))
     (wangyi-music-get-song-list)
     (wangyi-music-kill-process)
     (wangyi-music-play)
