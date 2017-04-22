@@ -174,6 +174,7 @@
           (define-key map " " 'wangyi-music-pause/resume)
           (define-key map "<" 'wangyi-music-seek-backward)
           (define-key map ">" 'wangyi-music-seek-forward)
+          (define-key map "d" 'wangyi-music-download)
           map))
   (use-local-map wangyi-music-mode-map))
 
@@ -260,6 +261,17 @@
   (goto-char (point-min))
   (search-forward (format "Track%2d" wangyi-music-current-song)))
 
+(defun wangyi-music-download ()
+  "Download current song into `wangyi-music-cache-directory'"
+  (interactive)
+  (let* ((song (elt wangyi-music-song-list
+                    wangyi-music-current-song))
+         (mp3url (wangyi-music--aget song 'mp3Url))
+         (mp3name (concat (wangyi-music--aget song 'name) ".mp3"))
+         (mp3file (expand-file-name mp3name wangyi-music-cache-directory )))
+    (url-copy-file mp3url mp3file)))
+
+
 (defun wangyi-music-bury-buffer ()
   "Bury wangyi music buffer."
   (interactive)
@@ -280,13 +292,13 @@
   (memq (process-status process)
         '(run open listen connect stop)))
 
+
 (defun wangyi-music-play ()
   "Wangyi music play entry."
   (unless (and wangyi-music-process
                (wangyi-music-process-live-p wangyi-music-process))
-    (let (song)
-      (setq song (elt wangyi-music-song-list
-                      wangyi-music-current-song))
+    (let ((song (elt wangyi-music-song-list
+                     wangyi-music-current-song)))
       (wangyi-music-interface-update)
       (setq wangyi-music-process
             (start-process "wangyi-music-proc"
@@ -509,9 +521,9 @@
                                     'face 'wangyi-music-track-face1)
                         (propertize (format "%s "
                                             (wangyi-music--aget (elt wangyi-music-song-list
-                                                       (mod (- wangyi-music-current-song 1)
-                                                            (length wangyi-music-song-list)))
-                                                  'name))
+                                                                     (mod (- wangyi-music-current-song 1)
+                                                                          (length wangyi-music-song-list)))
+                                                                'name))
                                     'face 'wangyi-music-track-face1)))
         (insert (concat (propertize (format "\n%sCurrent song: "
                                             wangyi-music-indent0)
@@ -525,9 +537,9 @@
                                     'face 'wangyi-music-track-face1)
                         (propertize (format "%s "
                                             (wangyi-music--aget (elt wangyi-music-song-list
-                                                       (mod (+ wangyi-music-current-song 1)
-                                                            (length wangyi-music-song-list)))
-                                                  'name))
+                                                                     (mod (+ wangyi-music-current-song 1)
+                                                                          (length wangyi-music-song-list)))
+                                                                'name))
                                     'face 'wangyi-music-track-face1)))
 
         (dotimes (i (length wangyi-music-song-list))
