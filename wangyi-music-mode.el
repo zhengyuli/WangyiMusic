@@ -1,4 +1,4 @@
-;;; wangyi-music-mode.el --- wangyi music mode
+;;; wangyi-music-mode.el --- wangyi music mode  -*- lexical-binding: t; -*-
 ;; Time-stamp: <2016-04-09 22:06:11 Saturday by zhengyuli>
 
 ;; Copyright (C) 2013 zhengyu li
@@ -38,7 +38,6 @@
 ;;; Code:
 
 (require 'json)
-(require 'assoc)
 (require 'url-http)
 
 (defgroup wangyi-music nil
@@ -104,27 +103,27 @@
 
 ;; Constant variables
 (defconst wangyi-music-channels-delimiter
-  (make-string 120 61)
+  (make-string 120 ?=)
   "Wangyi music channels delimiter.")
 
 (defconst wangyi-music-indent0
-  (make-string 1 32)
+  (make-string 1 ?\s)
   "Wangyi music 0-level indentation.")
 
 (defconst wangyi-music-indent1
-  (make-string 2 32)
+  (make-string 2 ?\s)
   "Wangyi music 1-level indentation.")
 
 (defconst wangyi-music-indent2
-  (make-string 4 32)
+  (make-string 4 ?\s)
   "Wangyi music 2-level indentation.")
 
 (defconst wangyi-music-indent3
-  (make-string 5 32)
+  (make-string 5 ?\s)
   "Wangyi music 3-level indentation.")
 
 (defconst wangyi-music-indent4
-  (make-string 10 32)
+  (make-string 10 ?\s)
   "Wangyi music 4-level indentation.")
 
 (defconst wangyi-music-buffer-name
@@ -155,7 +154,11 @@
 (defvar wangyi-music-process nil
   "Wangyi music run process.")
 
-(defun init-wangyi-music-mode-map ()
+(defun wangyi-music--aget (alist key)
+  " Return the value in ALIST that is associated with KEY."
+  (cdr (assoc-string key alist)))
+
+(defun wangyi-music-init-mode-map ()
   "Init wangyi music mode key map."
   (setq wangyi-music-mode-map
         (let ((map (make-sparse-keymap)))
@@ -171,6 +174,7 @@
           (define-key map " " 'wangyi-music-pause/resume)
           (define-key map "<" 'wangyi-music-seek-backward)
           (define-key map ">" 'wangyi-music-seek-forward)
+          (define-key map "d" 'wangyi-music-download)
           map))
   (use-local-map wangyi-music-mode-map))
 
@@ -223,16 +227,16 @@
           (wangyi-music-pause/resume)
         (error "Unknown status")))))
 
-(defun wangyi-music-set-channel (channel-number)
-  "Change wangyi channel with CHANNEL-NUMBER."
-  (interactive "nChannel number:")
-  (if (<= channel-number (length wangyi-music-channels))
-      (progn
-        (setq wangyi-music-current-channel channel-number)
-        (message (format "Change to channel: %s"
-                         (car (elt wangyi-music-channels channel-number))))
-        (wangyi-music-refresh))
-    (message "Warnning: not exist channel")))
+(defun wangyi-music-set-channel ()
+  "Change wangyi channel."
+  (interactive)
+  (let* ((channels (mapcar #'car wangyi-music-channels))
+         (the-channel (completing-read "Choose a channel or input the channel number: " channels)))
+    (if (member the-channel channels)
+        (setq wangyi-music-current-channel the-channel)
+      (setq wangyi-music-current-channel (car (elt wangyi-music-channels (string-to-number the-channel)))))
+    (message "Change to channel: %s" wangyi-music-current-channel)
+    (wangyi-music-refresh)))
 
 (defun wangyi-music-play-next-refresh ()
   "Play next song and refresh."
@@ -257,6 +261,17 @@
   (goto-char (point-min))
   (search-forward (format "Track%2d" wangyi-music-current-song)))
 
+(defun wangyi-music-download ()
+  "Download current song into `wangyi-music-cache-directory'"
+  (interactive)
+  (let* ((song (elt wangyi-music-song-list
+                    wangyi-music-current-song))
+         (mp3url (wangyi-music--aget song 'mp3Url))
+         (mp3name (concat (wangyi-music--aget song 'name) ".mp3"))
+         (mp3file (expand-file-name mp3name wangyi-music-cache-directory )))
+    (url-copy-file mp3url mp3file)))
+
+
 (defun wangyi-music-bury-buffer ()
   "Bury wangyi music buffer."
   (interactive)
@@ -277,13 +292,13 @@
   (memq (process-status process)
         '(run open listen connect stop)))
 
+
 (defun wangyi-music-play ()
   "Wangyi music play entry."
   (unless (and wangyi-music-process
                (wangyi-music-process-live-p wangyi-music-process))
-    (let (song)
-      (setq song (elt wangyi-music-song-list
-                      wangyi-music-current-song))
+    (let ((song (elt wangyi-music-song-list
+                     wangyi-music-current-song)))
       (wangyi-music-interface-update)
       (setq wangyi-music-process
             (start-process "wangyi-music-proc"
@@ -292,7 +307,7 @@
                            (if (string-match wangyi-music-player "mplayer")
                                "-slave"
                              "")
-                           (aget song 'mp3Url t)))
+                           (wangyi-music--aget song 'mp3Url)))
       (set-process-sentinel
        wangyi-music-process
        'wangyi-music-proc-sentinel)
@@ -355,14 +370,14 @@
     (wangyi-music-parse-song-list
      (wangyi-music-send-url (concat wangyi-music-discover-toplist-url
                                     "?id="
-                                    (cdr (elt wangyi-music-channels wangyi-music-current-channel)))))))
+                                    (cdr (assoc-string wangyi-music-current-channel wangyi-music-channels)))))))
 
 (defun wangyi-music-get-song-list-async (callback)
   "Get song list from wangyi music server with CALLBACK."
   (let ()
     (wangyi-music-send-url (concat wangyi-music-discover-toplist-url
                                    "?id="
-                                   (cdr (elt wangyi-music-channels wangyi-music-current-channel)))
+                                   (cdr (assoc-string wangyi-music-current-channel wangyi-music-channels)))
                            nil
                            #'(lambda (status &rest args)
                                (wangyi-music-parse-song-list (current-buffer))
@@ -412,7 +427,7 @@
 (defun wangyi-music-filter-song-list-detail (song-list-detail)
   "Filter invalid song from SONG-LIST-DETAIL."
   (dotimes (i (length song-list-detail))
-    (if (aget (elt song-list-detail i) 'mp3Url t)
+    (if (wangyi-music--aget (elt song-list-detail i) 'mp3Url)
         (setq wangyi-music-song-list
               (cons (elt song-list-detail i) wangyi-music-song-list))))
   (setq wangyi-music-song-list (reverse wangyi-music-song-list)))
@@ -487,7 +502,7 @@
       (insert (concat (propertize "\n\nCurrent channel: "
                                   'face '(:foreground "Green3" :height 1.2))
                       (propertize (format "%s\n\n"
-                                          (car (elt wangyi-music-channels wangyi-music-current-channel)))
+                                          wangyi-music-current-channel)
                                   'face '(:foreground "Orange" :height 1.2))))
       (let (song
             title
@@ -499,40 +514,40 @@
         (if wangyi-music-display-album
             (progn
               (insert wangyi-music-indent2)
-              (wangyi-music-insert-image-async (aget (aget song 'album) 'picUrl) (current-buffer) (point))
+              (wangyi-music-insert-image-async (wangyi-music--aget (wangyi-music--aget song 'album) 'picUrl) (current-buffer) (point))
               (insert "\n\n")))
         (insert (concat (propertize (format "%sPrevious song: "
                                             wangyi-music-indent0)
                                     'face 'wangyi-music-track-face1)
                         (propertize (format "%s "
-                                            (aget (elt wangyi-music-song-list
-                                                       (mod (- wangyi-music-current-song 1)
-                                                            (length wangyi-music-song-list)))
-                                                  'name t))
+                                            (wangyi-music--aget (elt wangyi-music-song-list
+                                                                     (mod (- wangyi-music-current-song 1)
+                                                                          (length wangyi-music-song-list)))
+                                                                'name))
                                     'face 'wangyi-music-track-face1)))
         (insert (concat (propertize (format "\n%sCurrent song: "
                                             wangyi-music-indent0)
                                     'face 'wangyi-music-track-face0)
                         (propertize (format "%s (kbps %s) "
-                                            (aget song 'name t)
-                                            (aget (aget song 'bMusic t) 'bitrate t))
+                                            (wangyi-music--aget song 'name)
+                                            (wangyi-music--aget (wangyi-music--aget song 'bMusic) 'bitrate))
                                     'face 'wangyi-music-track-face1)))
         (insert (concat (propertize (format "\n%sNext song: "
                                             wangyi-music-indent0)
                                     'face 'wangyi-music-track-face1)
                         (propertize (format "%s "
-                                            (aget (elt wangyi-music-song-list
-                                                       (mod (+ wangyi-music-current-song 1)
-                                                            (length wangyi-music-song-list)))
-                                                  'name t))
+                                            (wangyi-music--aget (elt wangyi-music-song-list
+                                                                     (mod (+ wangyi-music-current-song 1)
+                                                                          (length wangyi-music-song-list)))
+                                                                'name))
                                     'face 'wangyi-music-track-face1)))
 
         (dotimes (i (length wangyi-music-song-list))
           (setq song (elt wangyi-music-song-list i))
-          (setq title (aget song 'name t))
-          (setq album (aget (aget song 'album t) 'name t))
-          (setq company (aget (aget song 'album t) 'company t))
-          (setq artist (aget (elt (aget song 'artists t) 0) 'name t))
+          (setq title (wangyi-music--aget song 'name))
+          (setq album (wangyi-music--aget (wangyi-music--aget song 'album) 'name))
+          (setq company (wangyi-music--aget (wangyi-music--aget song 'album) 'company))
+          (setq artist (wangyi-music--aget (elt (wangyi-music--aget song 'artists) 0) 'name))
           (setq song-info (concat (propertize (format "\n\n%sTrack%2d " wangyi-music-indent1 i)
                                               'face 'wangyi-music-track-face0)
                                   (propertize "Title: " 'face 'wangyi-music-tag-face)
@@ -588,11 +603,11 @@
     (wangyi-music-mode)
     ;; Init settings
     (setq wangyi-music-status "stopped")
-    (setq wangyi-music-current-channel wangyi-music-default-channel)
     (if (not (file-exists-p wangyi-music-cache-directory))
         (mkdir wangyi-music-cache-directory t))
-    (init-wangyi-music-mode-map)
+    (wangyi-music-init-mode-map)
     (wangyi-music-get-channels)
+    (setq wangyi-music-current-channel (car (elt wangyi-music-channels wangyi-music-default-channel)))
     (wangyi-music-get-song-list)
     (wangyi-music-kill-process)
     (wangyi-music-play)
