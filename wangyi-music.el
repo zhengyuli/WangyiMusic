@@ -170,6 +170,7 @@
           (define-key map "c" 'wangyi-music-set-channel)
           (define-key map "n" 'wangyi-music-play-next-refresh)
           (define-key map "p" 'wangyi-music-play-previous)
+					(define-key map "S" 'wangyi-music-set-play)
           (define-key map "q" 'wangyi-music-bury-buffer)
           (define-key map "x" 'wangyi-music-quit)
           (define-key map " " 'wangyi-music-pause/resume)
@@ -255,6 +256,20 @@
   (wangyi-music-get-previous-song)
   (wangyi-music-play))
 
+(defun wangyi-music-set-play ()
+	"Play the specified song."
+	(interactive)
+	(let ((previous-song wangyi-music-current-song)
+				(track (read-minibuffer "Print the track number: ")))
+		(wangyi-music-kill-process)
+		(wangyi-music-get-specified-song track)
+		(if (and (> track previous-song) (>= previous-song wangyi-music-current-song))
+				(wangyi-music-refresh)
+			(wangyi-music-play))
+		(if (and (< track previous-song) (<= previous-song wangyi-music-current-song))
+				(wangyi-music-refresh)
+			(wangyi-music-play))))
+
 (defun wangyi-music-current-song-info ()
   "Show current song info."
   (interactive)
@@ -321,6 +336,14 @@
       (error "Song list is null")
     (setq wangyi-music-current-song (mod (+ wangyi-music-current-song 1)
                                          (length wangyi-music-song-list)))))
+
+(defun wangyi-music-get-specified-song (track)
+	"Get the specified song."
+	(if (null wangyi-music-song-list)
+			(error "Song list is null")
+		(setq wangyi-music-current-song (mod track
+																				 (length wangyi-music-song-list)))))
+
 (defun wangyi-music-kill-process ()
   "Kill current song."
   (when (and wangyi-music-process
