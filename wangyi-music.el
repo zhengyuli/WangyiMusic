@@ -1,5 +1,5 @@
 ;;; wangyi-music.el --- wangyi music mode
-;; Time-stamp: <2018-12-07 17:13:06 Friday by lli>
+;; Time-stamp: <2020-08-20 12:38:24 Thu>
 
 ;; Copyright (C) 2013 zhengyu li
 ;;
@@ -45,13 +45,15 @@
   "Wangyi music group"
   :group 'entertainment)
 
+;; Customizable variables
 (defcustom wangyi-music-mode-hook nil
 	"Wangyi music mode hook"
 	:type 'hook
 	:group 'wangyi-music)
 
-;; Customizable variables
-(defcustom wangyi-music-cache-directory "~/.emacs.d/wangyi-music/"
+(defcustom wangyi-music-cache-directory (if (null user-emacs-directory)
+																						"~/.emacs.d/wangyi-music/"
+																					(concatenate 'string user-emacs-directory "/wangyi-music/"))
   "Wangyi music default cache directory."
   :type 'string
   :group 'wangyi-music)
@@ -326,6 +328,7 @@
 (defun wangyi-music-proc-sentinel (proc change)
   "Wangyi music process sentinel for PROC with CHANGE."
   (when (string-match "\\(finished\\|Exiting\\)" change)
+		(message "The current song is error.Now I will play the next song.")
     (wangyi-music-play-next-refresh)))
 
 (defun wangyi-music-get-previous-song ()
