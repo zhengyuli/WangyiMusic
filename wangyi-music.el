@@ -45,6 +45,11 @@
   "Wangyi music group"
   :group 'entertainment)
 
+(defcustom wangyi-music-mode-hook nil
+	"Wangyi music mode hook"
+	:type 'hook
+	:group 'wangyi-music)
+
 ;; Customizable variables
 (defcustom wangyi-music-cache-directory "~/.emacs.d/wangyi-music/"
   "Wangyi music default cache directory."
