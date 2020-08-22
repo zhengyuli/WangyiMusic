@@ -40,6 +40,7 @@
 (require 'json)
 (require 'assoc)
 (require 'url-http)
+(require 'cl-lib)
 
 (defgroup wangyi-music nil
   "Wangyi music group"
@@ -53,7 +54,7 @@
 
 (defcustom wangyi-music-cache-directory (if (null user-emacs-directory)
 																						"~/.emacs.d/wangyi-music/"
-																					(concatenate 'string user-emacs-directory "/wangyi-music/"))
+																					(cl-concatenate 'string user-emacs-directory "/wangyi-music/"))
   "Wangyi music default cache directory."
   :type 'string
   :group 'wangyi-music)
